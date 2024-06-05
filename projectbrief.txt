@@ -145,6 +145,19 @@ sudo apt-get install jenkins -y
     install all custom plugins
 >configure two slave nodes on jenkins
     create credential for pem file you created on aws
+    add both slaves to nodes of jenkins
+    create webhook in github repo to integrate github to jenkins
+        http://jenkins ip:8080/github-webhook/
+
+
+STEP 4 - 
+-------
+Code should be containerized with docker file
+docker file should be build every time we push code to github
+
+
+
+
 
 
 
