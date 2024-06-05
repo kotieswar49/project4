@@ -1,0 +1,157 @@
+Goal - automation
+----
+Implement Devops Lifecycle in their company for a product based 
+company and their code is present in github
+https://github.com/hshar/website.git
+
+specifications to Implement Devops Lifecycle stepwise
+-----------------------------------------------------
+1. using configuration management tool install necessary softwares on the machines
+2. Git workflow has to be implemented
+3. code build should be automatically triggered once a commit is made to master or devlop branch 
+but not test branch
+    > If commit is made to develop branch, test the product, but do not push to prod
+4. The code should be containerized with help of Dockerfile
+5. Dockerfile should be build everytime there is a push to github
+6. All the above tasks should be defined in a jenkins pipeline with 
+    >job 1 - build
+    >job 2 - test
+    >job 3 - prod
+
+
+###############################################################################################
+
+1. using configuration management tool install necessary softwares on the machines
+
+>we need 3 aws ec2 machines 
+    Master t2.medium  - build
+    slave1  t2.micro  - test
+    slave2  t2.micro  - prod   
+>Create all three instances using aws cli or manually.
+
+    image-id - ami-05e00961530ae1b55  //Ubuntu
+    subnet-id - subnet-02e095cd65f7fa012    //ap-south-1a
+    key-name - IAM-keypair
+    security-group-id - sg-0d9122df68e5a78eb
+Master
+    aws ec2 run-instances --image-id ami-05e00961530ae1b55 --count 1 \
+    --instance-type t2.medium --key-name IAM-keypair --security-group-ids sg-0d9122df68e5a78eb \
+    --subnet-id subnet-02e095cd65f7fa012
+slave
+    aws ec2 run-instances --image-id ami-05e00961530ae1b55 --count 2 \
+    --instance-type t2.micro --key-name IAM-keypair --security-group-ids sg-0d9122df68e5a78eb \
+    --subnet-id subnet-02e095cd65f7fa012
+
+    master - 15.206.146.186
+    slave1 - 13.232.128.10
+    slave2 - 3.108.221.134
+    
+
+>In this project we need to install
+>Docker for containerisation
+>jenkins for CI/CD pipeline
+>java & python to run jenkins and Ansible 
+>Ansible for configuration tool
+    >Install java, jenkins, ansible, docker & python on one Master node
+        >installing ansible on master node using install.sh script file 
+        >install.sh contains
+
+        #sudo apt update
+        #sudo apt install software-properties-common
+        #sudo add-apt-repository - yes - update ppa:ansible/ansible
+        #sudo apt install ansible -y
+
+        >get the public key of master and paste it on authorized_keys file of slaves
+        so they can communicate each other
+
+        #ssh key-gen
+
+        >create a custom inventory file in ansible dir
+
+        #mkdir ansible
+        #cd ansible
+        #vim inventory   //paste the ip addres of slaves with variables
+            #slave1 ansible_host=13.201.79.76
+            #slave2 ansible_host=65.1.1.160
+        #ansible-inventory -i inventory --list   //to validate and obtain information
+        #ansible all -i inventory -m ping    //execute ping module on all hosts connected or not
+
+        >create a yaml file to create master.sh & slave.sh files for installing softwares
+        
+######################  ans.yaml ##########################
+---
+- name: installing tools on master
+  hosts: localhost
+  become: true
+  tasks: 
+  - name: executing master.sh script
+    script: master.sh
+- name: installing tools on slaves
+  hosts: slave1
+  become: true
+  tasks: 
+  - name: executing slave.sh script
+    script: slave.sh
+- name: installing tools on slaves
+  hosts: slave2
+  become: true
+  tasks: 
+  - name: executing slave.sh script
+    script: slave.sh   
+
+
+##########################################################
+        
+        
+        
+        master.sh contain
+
+sudo apt-get update
+
+sudo apt install openjdk-17-jre -y
+sudo apt-get install fontconfig openjdk-17-jre
+sudo apt-get install docker.io -y
+
+curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io.key | sudo tee \
+  /usr/share/keyrings/jenkins-keyring.asc > /dev/null
+
+echo deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] \
+  https://pkg.jenkins.io/debian-stable binary/ | sudo tee \
+  /etc/apt/sources.list.d/jenkins.list > /dev/null
+
+sudo apt-get update
+sudo apt-get install jenkins -y
+
+    >Install docker and java on two slave nodes
+        slave.sh contain
+
+        #sudo apt-get update
+        #sudo apt-get install openjdk-17-jre -y
+        #sudo apt-get install docker.io -y
+
+###########################################################
+>now master.sh and slave.sh are ready 
+>ans.yml file is also ready to install all installations on master and slave
+>execute ans.yml file 
+    ansible-playbook ans.yml    //will install only on master being localhost
+    ansible-playbook -i inventory ans.yml   
+    //will install on both master and slave being you have created inventory file
+
+
+>Now all your softwares are installed on master and slave 
+
+>open jenkins on web
+    open port 8080 on security group if not opened on aws
+    install all custom plugins
+>configure two slave nodes on jenkins
+    create credential for pem file you created on aws
+
+
+
+
+
+
+   
+
+
+
