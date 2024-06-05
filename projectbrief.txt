@@ -153,7 +153,13 @@ sudo apt-get install jenkins -y
 STEP 4 - 
 -------
 Code should be containerized with docker file
-docker file should be build every time we push code to github
+docker file should be build every time there is a change in code
+
+	sudo docker rm -f $(sudo docker ps -a -q)   //deletes the previous containers created
+	sudo docker build -t website:v1 .
+	sudo docker run -d -p 8081:80 website:v1
+	
+
 
 
 
